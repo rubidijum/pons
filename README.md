@@ -1,4 +1,6 @@
 # RG063-pons
 Pons
 
-Upoznavanje sa gitom :)
+Simple bridge building simulation program.
+
+
