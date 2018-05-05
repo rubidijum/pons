@@ -1,16 +1,24 @@
 #include <GL/glut.h>
 #include <stdio.h>
+#include <math.h>
+#include "help.h"
+
+#define INIT_WINDOW_WIDTH 700
+#define INIT_WINDOW_HEIGHT 700
 
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
+static void on_mouse(int button, int state, int x, int y);
 static void on_reshape(int width, int height);
+void draw_point(float x, float y);
 void draw_scene(void);
-void draw_grid(int HALF_GRID_SIZE);
-static void coordsys(void);
 
 GLdouble camX = 0;
 GLdouble camY = 0;
 GLdouble camZ = 0.5;
+
+int currentWidth = INIT_WINDOW_WIDTH;
+int currentHeight = INIT_WINDOW_HEIGHT;
 
 static unsigned build_bridge_mode = 1;
 
@@ -20,12 +28,13 @@ int main(int argc, char** argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
     
-    glutInitWindowSize(1000, 1000);
+    glutInitWindowSize(INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
     glutInitWindowPosition(0,0);
     glutCreateWindow(argv[0]);
     
     glutDisplayFunc(on_display);
     glutKeyboardFunc(on_keyboard);
+    glutMouseFunc(on_mouse);
     glutReshapeFunc(on_reshape);
     
     glClearColor(0,0,0, 1);
@@ -39,29 +48,26 @@ int main(int argc, char** argv){
 
 static void on_display(void){
     
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glMatrixMode(GL_MODELVIEW);
     
     printf("%f %f %f\n", camX, camY, camZ);
         
     if(build_bridge_mode){ //build bridge
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
-        gluLookAt(0, 0, 0.5, 0, 0, 0, 0, 1, 0);
-        draw_grid(25);
+        gluLookAt(0, 0, 1.8, 0, 0, 0, 0, 1, 0);
+        draw_grid(25); //25
         draw_scene();
         coordsys();
     }
-    else{ //animation + draw bridge 
+    else{ //animation + draw bridge
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
-        gluLookAt(0.2, 0.3, 0.5, 0, 0, 0, 0, 1, 0);
+        gluLookAt(0.5, 1.3, 3.7, 0, 0, 0, 0, 1, 0);
         coordsys();
         draw_scene();
     }
     
-    
-    //nacrtaj scenu sa mrezom - hardkod posle mozda neki json 
-    //dugme za kameru - sve ide u 3D
     //dugme za pokretanje
     //dugme za reset
     
@@ -81,8 +87,8 @@ static void on_keyboard(unsigned char key, int x, int y){
                 glutPostRedisplay();
             }
             break;
-        case 'r':
-        case 'R':
+        case 'b':
+        case 'B':
             if(!build_bridge_mode){
                 build_bridge_mode = 1;
                 printf("build_bridge_mode: %d\n", build_bridge_mode);
@@ -97,82 +103,110 @@ static void on_keyboard(unsigned char key, int x, int y){
     }
 }
 
-static void on_mouse(){
+//FIXME
+void draw_point(float x, float y){
+    glColor3f(255, 69, 0);
+    glPointSize(10);
+    
+    float x_t, y_t;
+    
+    
+    if((x >= currentWidth/2 && x < currentWidth) && (y > 0 && y <= currentHeight/2)){ //prvi kvadrant
+            x_t = (x - currentWidth/2)/(float)(currentWidth/2);
+            y_t = (currentHeight/2 - y)/(float)(currentHeight/2);
+    }else if((x <= currentWidth/2 && x >= 0) && (y <= currentHeight/2 && y >= 0)){ //drugi kvadrant
+             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+    }else if((x <= (currentWidth/2) && x >= 0) && (y <= currentHeight && y >= (currentHeight/2))){ //treci kvadrant
+             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+    }else if((x <= currentWidth && x >= (currentWidth/2)) && (y <= currentHeight && y >= (currentHeight/2))){ 
+             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+    }
+    
+    printf("Before rounding: \nX = %f\nY = %f\n", x_t, y_t);
+    
+//     x_t = x_t * 10.f;
+//     x_t = roundf(x_t);
+//     x_t = x_t / 10.f;
+//         
+//     y_t = y_t * 10.f;
+//     y_t = roundf(y_t);
+//     y_t = y_t / 10.f;
+    
+    glBegin(GL_POINTS);
+        //printf("Drawing %f %f\n", x_t, y_t);
+        glVertex3f(x_t, y_t, 0.0);
+    glEnd();
+    glutSwapBuffers();
+}
+
+static void on_mouse(int button, int state, int x, int y){
+    
+    float x_f, y_f;
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+        printf("X:%d Y:%d\n", x, y);
+        draw_point((float)x,(float)y);
+        
+    }
+//     if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
+//         printf("Released X:%d Y:%d\n", x, y);
+//     }
     
 }
 
 static void on_reshape(int width, int height){
     
-    //TODO:fix this
-    /* Podesava se viewport. */
+    currentHeight = height;
+    currentWidth = width;
+    
     glViewport(0, 0, width, height);
 
-    /* Podesava se projekcija. */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(0, (float) width / height, -10, 10);
+    if(build_bridge_mode){
+        printf("gluOrtho\n\n");
+        glOrtho(-1.0, 1.0, -1.0, 1.0, -5.5, 5.5); 
+    }
+    else if(!build_bridge_mode){
+        printf("gluPerspective\n\n");
+        gluPerspective(30, (float) width / height, 0.1, 100);
+    }
+    
+    glMatrixMode(GL_MODELVIEW);
        
 }
 
-void draw_grid(int HALF_GRID_SIZE){
-    
-    glColor3f(0.6,0.6,0.6);
-    float GRID_STEP = 1.0/(float)HALF_GRID_SIZE;
-    glBegin(GL_LINES);
-        float i; 
-        for(i = -1; i <= 1; i += GRID_STEP){
-            //horizontal lines
-            glVertex3f(-1, (float)i, 0);
-            glVertex3f(1, (float)i, 0);
-            
-            //vertical lines
-            glVertex3f((float)i, -1, 0);
-            glVertex3f((float)i, 1, 0);
-        }
-    glEnd();
-}
-
 void draw_scene(void){
+    
+    GLfloat old_line_width[1];
+    glGetFloatv(GL_LINE_WIDTH, old_line_width);
+    printf("%f\n" , old_line_width[0]);
+    
+    glLineWidth(4.0);
         
+//     draw_point(400,400);
+//     draw_point(192,465);
+//     draw_point(610,465);
+//     draw_point(528,494); // 0.3 -0.2
+//     
     //nacrtaj levu obalu
     glPushMatrix();
         glColor3f(0,1,1);
-        glScalef(0.5,0.7,0.5);
-        glTranslatef(-1.5, -1, 0.3);
+        glScalef(0.5,0.8,0.5);
+        glTranslatef(-1.54, -0.9, 0.3);
         glutWireCube(1);
     glPopMatrix();
     
     //nacrtaj desnu obalu
     glPushMatrix();
         glColor3f(0,0.8,0);
-        glScalef(0.5,0.7,0.5);
-        glTranslatef(1.5, -1, 0.3);
+        glScalef(0.5,0.8,0.5);
+        glTranslatef(1.54, -0.9, 0.3);
         glutWireCube(1);
     glPopMatrix();
     
-}
-
-static void coordsys(void){
-    
-    //x osa => crvena
-    glColor3f(1,0,0);
-    glBegin(GL_LINES);
-    glVertex3f(-100000, 0, 0);
-    glVertex3f(100000, 0, 0);
-    glEnd();
-    
-    //y osa => zelena
-    glColor3f(0,1,0);
-    glBegin(GL_LINES);
-    glVertex3f(0, -100000, 0);
-    glVertex3f(0, 100000, 0);
-    glEnd();
-    
-    //z osa => plava
-    glColor3f(0,0,1);
-    glBegin(GL_LINES);
-    glVertex3f(0, 0, -100000);
-    glVertex3f(0, 0, 100000);
-    glEnd();
+    glLineWidth(old_line_width[0]);
     
 }
