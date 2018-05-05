@@ -136,6 +136,7 @@ void draw_point(float x, float y){
 //     y_t = y_t / 10.f;
     
     glBegin(GL_POINTS);
+    
         //printf("Drawing %f %f\n", x_t, y_t);
         glVertex3f(x_t, y_t, 0.0);
     glEnd();
