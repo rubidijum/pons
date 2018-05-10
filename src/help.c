@@ -3,7 +3,7 @@
 #include "help.h"
 
 void draw_grid(int HALF_GRID_SIZE){
-    
+   
     glColor3f(0.6,0.6,0.6);
     float GRID_STEP = 1.0/(float)HALF_GRID_SIZE;
     glBegin(GL_LINES);

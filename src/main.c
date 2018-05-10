@@ -12,6 +12,7 @@ static void on_mouse(int button, int state, int x, int y);
 static void on_reshape(int width, int height);
 void draw_point(float x, float y);
 void draw_scene(void);
+void draw_road(int Xp, int Yp, int Xr, int Yr);
 
 GLdouble camX = 0;
 GLdouble camY = 0;
@@ -19,6 +20,8 @@ GLdouble camZ = 0.5;
 
 int currentWidth = INIT_WINDOW_WIDTH;
 int currentHeight = INIT_WINDOW_HEIGHT;
+
+float Xp, Yp, Xr, Yr;
 
 static unsigned build_bridge_mode = 1;
 
@@ -56,7 +59,7 @@ static void on_display(void){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
         gluLookAt(0, 0, 1.8, 0, 0, 0, 0, 1, 0);
-        draw_grid(25); //25
+        draw_grid(25); //25 => 50 celija * 50 celija
         draw_scene();
         coordsys();
     }
@@ -69,7 +72,7 @@ static void on_display(void){
     }
     
     //dugme za pokretanje
-    //dugme za reset
+    //dugme za reset animacije
     
     glutSwapBuffers();
 }
@@ -145,15 +148,25 @@ void draw_point(float x, float y){
 
 static void on_mouse(int button, int state, int x, int y){
     
-    float x_f, y_f;
+    
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
         printf("X:%d Y:%d\n", x, y);
-        draw_point((float)x,(float)y);
+        Xp = x;
+        Yp = y;
+        draw_point(Xp,Yp);
         
     }
-//     if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
-//         printf("Released X:%d Y:%d\n", x, y);
-//     }
+      if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
+        printf("\n=============\n\nPRESSED X:%d Y:%d\n", x, y);
+          printf("Released X:%d Y:%d\n", x, y);
+        
+        Xr = x;
+        Yr = y;
+        draw_point(Xr,Yr);
+        draw_road(Xp, Yp, Xr, Yr);
+      }
+    
+    
     
 }
 
@@ -179,6 +192,62 @@ static void on_reshape(int width, int height){
        
 }
 
+void draw_road(int Xp, int Yp, int Xr, int Yr){
+    
+    float Xp_t, Yp_t, Xr_t, Yr_t;
+    
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    
+    //TODO: prebaci ovo u funkciju
+     if((Xp >= currentWidth/2 && Xp < currentWidth) && (Yp > 0 && Yp <= currentHeight/2)){ //prvi kvadrant
+            printf("prvi\n");
+            Xp_t = (Xp - currentWidth/2)/(float)(currentWidth/2);
+            Yp_t = (currentHeight/2 - Yp)/(float)(currentHeight/2);
+     }else if((Xp <= currentWidth/2 && Xp >= 0) && (Yp <= currentHeight/2 && Yp >= 0)){ //drugi kvadrant
+         printf("DRUGI\n");
+            printf("%d => %d\n", Xp, Yp);
+              Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
+              Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
+              printf("%f => %f\n", Xp_t, Yp_t);
+     }else if((Xp <= (currentWidth/2) && Xp >= 0) && (Yp <= currentHeight && Yp >= (currentHeight/2))){ //treci kvadrant
+         printf("treci\n");
+              Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
+              Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
+     }else if((Xp <= currentWidth && Xp >= (currentWidth/2)) && (Yp <= currentHeight && Yp >= (currentHeight/2))){ 
+         printf("cetvrti\n");
+              Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
+              Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
+     }
+     
+     printf("DRAWING\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
+     
+     if((Xr >= currentWidth/2 && Xr < currentWidth) && (Yr > 0 && Yr <= currentHeight/2)){ //prvi kvadrant
+             Xr_t = (Xr - currentWidth/2)/(float)(currentWidth/2);
+             Yr_t = (currentHeight/2 - Yr)/(float)(currentHeight/2);
+     }else if((Xr <= currentWidth/2 && Xr >= 0) && (Yr <= currentHeight/2 && Yr >= 0)){ //drugi kvadrant
+              Xr_t = (Xr - (currentWidth/2))/(float)(currentWidth/2);
+              Yr_t = ((currentHeight/2) - Yr)/(float)(currentHeight/2);
+     }else if((Xr <= (currentWidth/2) && Xr >= 0) && (Yr <= currentHeight && Yr >= (currentHeight/2))){ //treci kvadrant
+              Xr_t = (Xr - (currentWidth/2))/(float)(currentWidth/2);
+              Yr_t = ((currentHeight/2) - Yr)/(float)(currentHeight/2);
+     }else if((Xr <= currentWidth && Xr >= (currentWidth/2)) && (Yr <= currentHeight && Yr >= (currentHeight/2))){ 
+              Xr_t = (Xr - (currentWidth/2))/(float)(currentWidth/2);
+              Yr_t = ((currentHeight/2) - Yr)/(float)(currentHeight/2);
+     }
+    
+    printf("drawing\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
+    
+    glBegin(GL_POLYGON);
+        glVertex3f(Xp_t, Yp_t, 0.6);
+        glVertex3f(Xr_t, Yr_t, 0.6);
+        glVertex3f(Xr_t, Yr_t, -0.0);
+        glVertex3f(Xp_t, Yp_t, -0.0);
+    glEnd();
+    
+    glutSwapBuffers();
+    
+}
+
 void draw_scene(void){
     
     GLfloat old_line_width[1];
@@ -190,7 +259,9 @@ void draw_scene(void){
 //     draw_point(400,400);
 //     draw_point(192,465);
 //     draw_point(610,465);
-//     draw_point(528,494); // 0.3 -0.2
+     draw_point(170,460); // 0.3 -0.2
+     draw_point(530,460);
+     //draw_road(150, 500, 400, 500);
 //     
     //nacrtaj levu obalu
     glPushMatrix();
