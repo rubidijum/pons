@@ -1,11 +1,17 @@
-pons: main.o help.o
-	gcc main.o help.o -o pons -lglut -lGLU -lGL -lm
+PROGRAM = pons
+CC = gcc
+LDLIBS = -lglut -lGLU -lGL
+
+$(PROGRAM): main.o help.o
+	$(CC) $^ -o $@ $(LDLIBS) -lm
 
 main.o: main.c
-	gcc -c main.c -lglut -lGLU -lGL -lm
+	$(CC) -c $< $(LDLIBS) -lm
 	
 help.o: help.c help.h
-	gcc -c help.c -lglut -lGLU -lGL -lm
+	$(CC) -c $^ $(LDLIBS) -lm
 	
+.PHONY: clean	
+
 clean:
 	rm *.o pons

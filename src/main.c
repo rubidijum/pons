@@ -5,6 +5,7 @@
 
 #define INIT_WINDOW_WIDTH 700
 #define INIT_WINDOW_HEIGHT 700
+#define MAX_BEAMS 100
 
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
@@ -14,6 +15,8 @@ void draw_point(float x, float y);
 void draw_scene(void);
 void draw_road(int Xp, int Yp, int Xr, int Yr);
 
+
+
 GLdouble camX = 0;
 GLdouble camY = 0;
 GLdouble camZ = 0.5;
@@ -21,9 +24,39 @@ GLdouble camZ = 0.5;
 int currentWidth = INIT_WINDOW_WIDTH;
 int currentHeight = INIT_WINDOW_HEIGHT;
 
+int beamPointer = 0;
+
 float Xp, Yp, Xr, Yr;
 
+
 static unsigned build_bridge_mode = 1;
+
+typedef struct{
+    //koordinate zgloba
+    int X;
+    int Y;
+    //susedi zgloba
+    //Joint neighbours[5];    
+    //int numOfNeighbours = 0;
+}Joint;
+
+typedef struct{
+    //pocetna i krajnja tacka
+    Joint begin;
+    Joint end;
+}Beam;
+
+typedef struct{
+    Beam beams[MAX_BEAMS];
+}Bridge;
+
+Joint A, B;
+Beam AB;
+Bridge most;
+
+void add_beam_to_bridge();
+void print_bridge();
+void undo_add_beam();
 
 int main(int argc, char** argv){
     
@@ -98,6 +131,11 @@ static void on_keyboard(unsigned char key, int x, int y){
                 glutPostRedisplay();
             }
             break;
+        case 'u':
+        case 'U':
+            undo_add_beam();
+//             glutPostRedisplay();
+            //TODO: dodaj draw bridge_f-ju
         case 'g':
         case 'G':
             break;
@@ -148,11 +186,13 @@ void draw_point(float x, float y){
 
 static void on_mouse(int button, int state, int x, int y){
     
-    
+       
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
-        printf("X:%d Y:%d\n", x, y);
         Xp = x;
         Yp = y;
+        A.X = Xp;
+        A.Y = Yp;
+        AB.begin = A;
         draw_point(Xp,Yp);
         
     }
@@ -162,6 +202,13 @@ static void on_mouse(int button, int state, int x, int y){
         
         Xr = x;
         Yr = y;
+        B.X = Xr;
+        B.Y = Yr;
+        
+        AB.end = B;
+        printf("begin X:%d, begin Y:%d\nend X:%d, end Y:%d\n", AB.begin.X, AB.begin.Y, AB.end.X, AB.end.Y);
+        //add_beam
+        add_beam_to_bridge();
         draw_point(Xr,Yr);
         draw_road(Xp, Yp, Xr, Yr);
       }
@@ -196,7 +243,7 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
     
     float Xp_t, Yp_t, Xr_t, Yr_t;
     
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ); //vrati na prosli mode
     
     //TODO: prebaci ovo u funkciju
      if((Xp >= currentWidth/2 && Xp < currentWidth) && (Yp > 0 && Yp <= currentHeight/2)){ //prvi kvadrant
@@ -280,5 +327,33 @@ void draw_scene(void){
     glPopMatrix();
     
     glLineWidth(old_line_width[0]);
+    
+}
+
+void print_bridge(){
+    int i;
+    printf("Bridge:\n");
+    for(i = 0; i < beamPointer; i++){
+        printf("[%d %d - %d %d]\n", most.beams[i+1].begin.X, most.beams[i+1].begin.Y, most.beams[i+1].end.X, most.beams[i+1].end.Y);
+    }
+}
+
+void add_beam_to_bridge(){
+    printf("Adding beam: Xbegin %d Ybegin %d, Xend %d, Yend %d to bridge\n", A.X, A.Y, B.X, B.Y); 
+    most.beams[++beamPointer] = AB;
+    print_bridge();
+    
+}
+
+void undo_add_beam(){
+    beamPointer--;
+    print_bridge();
+}
+
+void draw_beam(Beam* beam){
+    
+}
+
+void draw_bridge(){
     
 }
