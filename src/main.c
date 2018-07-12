@@ -7,6 +7,8 @@
 #define INIT_WINDOW_HEIGHT 700
 #define MAX_BEAMS 100
 
+#define HALF_GRID_SIZE 25
+
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_mouse(int button, int state, int x, int y);
@@ -58,6 +60,9 @@ void add_beam_to_bridge();
 void print_bridge();
 void undo_add_beam();
 
+void draw_bridge();
+void draw_beam(Beam* beam);
+
 int main(int argc, char** argv){
     
     //inicijalizacija gluta
@@ -92,8 +97,9 @@ static void on_display(void){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
         gluLookAt(0, 0, 1.8, 0, 0, 0, 0, 1, 0);
-        draw_grid(25); //25 => 50 celija * 50 celija
+        draw_grid(HALF_GRID_SIZE); //25 => 50 celija * 50 celija
         draw_scene();
+        draw_bridge();
         coordsys();
     }
     else{ //animation + draw bridge
@@ -102,6 +108,7 @@ static void on_display(void){
         gluLookAt(0.5, 1.3, 3.7, 0, 0, 0, 0, 1, 0);
         coordsys();
         draw_scene();
+        draw_bridge();
     }
     
     //dugme za pokretanje
@@ -134,8 +141,8 @@ static void on_keyboard(unsigned char key, int x, int y){
         case 'u':
         case 'U':
             undo_add_beam();
-//             glutPostRedisplay();
-            //TODO: dodaj draw bridge_f-ju
+            glutPostRedisplay();
+            
         case 'g':
         case 'G':
             break;
@@ -144,7 +151,7 @@ static void on_keyboard(unsigned char key, int x, int y){
     }
 }
 
-//FIXME
+//FIXME: add snap to grid
 void draw_point(float x, float y){
     glColor3f(255, 69, 0);
     glPointSize(10);
@@ -168,13 +175,15 @@ void draw_point(float x, float y){
     
     printf("Before rounding: \nX = %f\nY = %f\n", x_t, y_t);
     
-//     x_t = x_t * 10.f;
-//     x_t = roundf(x_t);
-//     x_t = x_t / 10.f;
+    float snapX = HALF_GRID_SIZE*1.f;
+     x_t = x_t * snapX;
+     x_t = roundf(x_t);
+     x_t = x_t / snapX;
 //         
-//     y_t = y_t * 10.f;
-//     y_t = roundf(y_t);
-//     y_t = y_t / 10.f;
+     float snapY = HALF_GRID_SIZE*1.f;
+     y_t = y_t * snapY;
+     y_t = roundf(y_t);
+     y_t = y_t / snapY;
     
     glBegin(GL_POINTS);
     
@@ -285,10 +294,10 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
     printf("drawing\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
     
     glBegin(GL_POLYGON);
-        glVertex3f(Xp_t, Yp_t, 0.6);
-        glVertex3f(Xr_t, Yr_t, 0.6);
-        glVertex3f(Xr_t, Yr_t, -0.0);
-        glVertex3f(Xp_t, Yp_t, -0.0);
+        glVertex3f(Xp_t, Yp_t, 0.42);
+        glVertex3f(Xr_t, Yr_t, 0.42);
+        glVertex3f(Xr_t, Yr_t, -0.1);
+        glVertex3f(Xp_t, Yp_t, -0.1);
     glEnd();
     
     glutSwapBuffers();
@@ -351,9 +360,13 @@ void undo_add_beam(){
 }
 
 void draw_beam(Beam* beam){
-    
+    draw_road(beam->begin.X, beam->begin.Y, beam->end.X, beam->end.Y);
 }
 
 void draw_bridge(){
-    
+    int i;
+    for (i = 0; i <= beamPointer; i++){
+        
+        draw_beam(&most.beams[i]);
+    }
 }
