@@ -8,6 +8,7 @@ extern Joint A, B;
 extern Beam AB;
 extern Bridge most;
 
+
 void print_bridge(){
     int i;
     printf("Bridge:\n");
@@ -37,8 +38,13 @@ void draw_beam(Beam* beam){
 
 void draw_bridge(){
     int i;
-    for (i = 0; i <= beamPointer; i++){
-        draw_beam(&most.beams[i]);
-    }
+    if(beamPointer != 0)
+        for (i = 0; i <= beamPointer; i++){
+            glBegin(GL_POINTS);
+            draw_point(most.beams[i].begin.X,most.beams[i].begin.Y);
+            draw_point(most.beams[i].end.X,most.beams[i].end.Y);
+            glEnd();
+            draw_beam(&most.beams[i]);
+        }
 } 
 

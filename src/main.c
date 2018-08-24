@@ -1,6 +1,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include "help.h"
 #define MAIN_FILE
 #include "bridge.h"
@@ -9,17 +10,27 @@
 #define INIT_WINDOW_HEIGHT 700
 #define MAX_BEAMS 100
 
+#define TIMER ID 0
+#define TIMER_INTERVAL 20
+
 #define HALF_GRID_SIZE 25
 
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_mouse(int button, int state, int x, int y);
 static void on_reshape(int width, int height);
+static void on_timer(int value);
+
+static int animation_ongoing;
+double animation_parameter = 0;
+
 void draw_point(float x, float y);
 void draw_scene(void);
 void draw_road(int Xp, int Yp, int Xr, int Yr);
 
 void draw_car();
+
+static float carX, carY;
 
 GLdouble camX = 0;
 GLdouble camY = 0;
@@ -52,43 +63,55 @@ int main(int argc, char** argv){
     glutMouseFunc(on_mouse);
     glutReshapeFunc(on_reshape);
     
-    glClearColor(0,0,0, 1);
     
-    glEnable(GL_DEPTH_TEST);
+    glClearColor(0,0,0, 1);
+    glClearDepth(10);
+    
+    //glEnable(GL_DEPTH_TEST);
     
     glutMainLoop();
     
     return 0;
 }
 
+static void on_timer(int value){
+    
+    animation_parameter += 0.01;
+    
+    if(animation_ongoing){
+        glutTimerFunc(10, on_timer, 0);        
+    }
+    
+    glutPostRedisplay();
+    
+}
+
 static void on_display(void){
+    //printf("%f %f %f\n", camX, camY, camZ);
     
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
     
-    
-    printf("%f %f %f\n", camX, camY, camZ);
-        
     if(build_bridge_mode){ //build bridge
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
+        
         gluLookAt(0, 0, 1.8, 0, 0, 0, 0, 1, 0);
         draw_grid(HALF_GRID_SIZE); //25 => 50 celija * 50 celija
         draw_scene();
-        draw_bridge();
+        draw_bridge(); 
         draw_car();
         coordsys();
+        
     }
-    else{ //animation + draw bridge
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
+    else {//animation + draw bridge
+        
         gluLookAt(0.5, 1.1, 3.7, 0, 0, 0, 0, 1, 0);
         coordsys();
         draw_scene();
         draw_car();
         draw_bridge();
     }
-    
-    //dugme za pokretanje
-    //dugme za reset animacije
+    glFlush();
     
     glutSwapBuffers();
 }
@@ -119,13 +142,22 @@ static void on_keyboard(unsigned char key, int x, int y){
             undo_add_beam();
             glutPostRedisplay();
             break;
-        case 'C': //NOTE: testiranje iscrtavanja auta
-        case 'c':
-            draw_car();
-            glutPostRedisplay();
-            break;
         case 'g':
         case 'G':
+            //if(!build_bridge_mode){
+                if(!animation_ongoing){
+                    animation_ongoing = 1;
+                    glutTimerFunc(10, on_timer, 0);
+                    break;
+                }
+            //}
+        case 's':
+        case 'S':
+            animation_ongoing = 0;
+            break;
+        case 'r':
+        case 'R':
+            animation_parameter = 0;
             break;
        
            
@@ -193,48 +225,50 @@ static void on_reshape(int width, int height){
 void draw_car(){
     
     GLUquadricObj* Cylinder;
-   Cylinder = gluNewQuadric();
-   gluQuadricDrawStyle(Cylinder, GLU_FILL);
-   gluQuadricOrientation(Cylinder, GLU_OUTSIDE);
+    Cylinder = gluNewQuadric();
+    gluQuadricDrawStyle(Cylinder, GLU_LINE);
+    gluQuadricOrientation(Cylinder, GLU_OUTSIDE);
    
-   glPushMatrix();
+    glPushMatrix();
    
-   glRotatef(90, 0, 1, 0);
-   glScalef(0.1,0.1,0.1);
-   glTranslatef(-1.8,-2.8,-9);
+    glTranslatef(animation_parameter, 0, 0);
    
-   glPushMatrix();
-    glScalef (1.0, 0.3, 1.8);      /* modeling transformation */ 
-    glutWireCube (1.0);
-    glScalef(1,1,0.5);
-    glTranslatef(0,0.9,0);
-    glutWireCube(1.0);
-   glPopMatrix();
+    glRotatef(90, 0, 1, 0);
+    glScalef(0.1,0.1,0.1);
+    glTranslatef(-1.8,-2.8,-9);
    
-   glPushMatrix();
-    glTranslatef(0.5,-0.1,-0.6);
-    glRotatef(90,0,1,0);
-    gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
-   glPopMatrix();
+    glPushMatrix();
+        glScalef (1.0, 0.3, 1.8);
+        glutSolidCube (1.0);
+        glScalef(1,1,0.5);
+        glTranslatef(0,0.9,0);
+        glutSolidCube(1.0);
+    glPopMatrix();
    
-   glPushMatrix();
-    glTranslatef(0.5,-0.1,0.6);
-    glRotatef(90,0,1,0);
-    gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
-   glPopMatrix();
+    glPushMatrix();
+        glTranslatef(0.5,-0.1,-0.6);
+        glRotatef(90,0,1,0);
+        gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
+    glPopMatrix();
+   
+    glPushMatrix();
+        glTranslatef(0.5,-0.1,0.6);
+        glRotatef(90,0,1,0);
+        gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
+    glPopMatrix();
    
    
     glPushMatrix();
-     glTranslatef(-0.6,-0.1,-0.6);
-     glRotatef(90,0,1,0);
-     gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
+        glTranslatef(-0.6,-0.1,-0.6);
+        glRotatef(90,0,1,0);
+        gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
     glPopMatrix();
    
    
    glPushMatrix();
-    glTranslatef(-0.6,-0.1,0.6);
-    glRotatef(90,0,1,0);
-    gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
+        glTranslatef(-0.6,-0.1,0.6);
+        glRotatef(90,0,1,0);
+        gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
    glPopMatrix();
    
    glPopMatrix();

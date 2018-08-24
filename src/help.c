@@ -49,7 +49,7 @@ void coordsys(void){
     
 }
 
-//FIXME: add snap to grid
+
 void draw_point(float x, float y){
     glColor3f(255, 69, 0);
     glPointSize(10);
@@ -71,7 +71,7 @@ void draw_point(float x, float y){
              y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
     }
     
-    printf("Before rounding: \nX = %f\nY = %f\n", x_t, y_t);
+    //printf("Before rounding: \nX = %f\nY = %f\n", x_t, y_t);
     
     float snapX = 25*1.f;
      x_t = x_t * snapX;
@@ -93,25 +93,21 @@ void draw_point(float x, float y){
 
 void draw_scene(void){
     
-    GLfloat old_line_width[1];
-    glGetFloatv(GL_LINE_WIDTH, old_line_width);
-    printf("%f\n" , old_line_width[0]);
+    //GLfloat old_line_width[1];
+    //glGetFloatv(GL_LINE_WIDTH, old_line_width);
+    //printf("%f\n" , old_line_width[0]);
     
-    glLineWidth(5.0);
+    //glLineWidth(5.0);
         
-//     draw_point(400,400);
-//     draw_point(192,465);
-//     draw_point(610,465);
-     draw_point(170,460); // 0.3 -0.2
-     draw_point(530,460);
-     //draw_road(150, 500, 400, 500);
-//     
+    draw_point(170,460); // 0.3 -0.2
+    draw_point(530,460);
+       
     //nacrtaj levu obalu
     glPushMatrix();
         glColor3f(0,1,1);
         glScalef(0.5,0.8,0.5);
         glTranslatef(-1.54, -0.9, 0.3);
-        glutWireCube(1);
+        glutSolidCube(1);
     glPopMatrix();
     
     //nacrtaj desnu obalu
@@ -122,7 +118,7 @@ void draw_scene(void){
         glutWireCube(1);
     glPopMatrix();
     
-    glLineWidth(old_line_width[0]);
+    //glLineWidth(old_line_width[0]);
     
 }
 
@@ -136,26 +132,26 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
     glLineWidth(2.0);
     
      if((Xp >= currentWidth/2 && Xp < currentWidth) && (Yp > 0 && Yp <= currentHeight/2)){ //prvi kvadrant
-            printf("prvi\n");
+            //printf("prvi\n");
             Xp_t = (Xp - currentWidth/2)/(float)(currentWidth/2);
             Yp_t = (currentHeight/2 - Yp)/(float)(currentHeight/2);
      }else if((Xp <= currentWidth/2 && Xp >= 0) && (Yp <= currentHeight/2 && Yp >= 0)){ //drugi kvadrant
-         printf("DRUGI\n");
-            printf("%d => %d\n", Xp, Yp);
+            //printf("DRUGI\n");
+            //printf("%d => %d\n", Xp, Yp);
               Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
               Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
-              printf("%f => %f\n", Xp_t, Yp_t);
+              //printf("%f => %f\n", Xp_t, Yp_t);
      }else if((Xp <= (currentWidth/2) && Xp >= 0) && (Yp <= currentHeight && Yp >= (currentHeight/2))){ //treci kvadrant
-         printf("treci\n");
+         //printf("treci\n");
               Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
               Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
      }else if((Xp <= currentWidth && Xp >= (currentWidth/2)) && (Yp <= currentHeight && Yp >= (currentHeight/2))){ 
-         printf("cetvrti\n");
+         //printf("cetvrti\n");
               Xp_t = (Xp - (currentWidth/2))/(float)(currentWidth/2);
               Yp_t = ((currentHeight/2) - Yp)/(float)(currentHeight/2);
      }
      
-     printf("DRAWING\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
+     //printf("DRAWING\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
      
      if((Xr >= currentWidth/2 && Xr < currentWidth) && (Yr > 0 && Yr <= currentHeight/2)){ //prvi kvadrant
              Xr_t = (Xr - currentWidth/2)/(float)(currentWidth/2);
@@ -171,7 +167,7 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
               Yr_t = ((currentHeight/2) - Yr)/(float)(currentHeight/2);
      }
     
-    printf("drawing\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
+    //printf("drawing\n Xp - %f\n Yp - %f\n Xr - %f\n Yr - %f\n\n", Xp_t, Yp_t, Xr_t, Yr_t);
     
     glBegin(GL_POLYGON);
         glVertex3f(Xp_t, Yp_t, 0.42);
