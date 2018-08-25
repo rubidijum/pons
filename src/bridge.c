@@ -1,5 +1,6 @@
 #include <GL/glut.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "bridge.h"
 #include "help.h"
 
@@ -25,6 +26,8 @@ void add_beam_to_bridge(){
 }
 
 void undo_add_beam(){
+    //unisti susede 
+    //remove_neighbours(most[beamPointer]);
     if(beamPointer >= 0){
         beamPointer--;
         print_bridge();
@@ -40,11 +43,18 @@ void draw_bridge(){
     int i;
     if(beamPointer != 0)
         for (i = 0; i <= beamPointer; i++){
-            glBegin(GL_POINTS);
             draw_point(most.beams[i].begin.X,most.beams[i].begin.Y);
             draw_point(most.beams[i].end.X,most.beams[i].end.Y);
-            glEnd();
             draw_beam(&most.beams[i]);
         }
 } 
+
+bool joint_exists(Joint j){
+    int i;
+    for(i = 0; i < beamPointer; i++){
+        if((most.beams[beamPointer].begin.X == j.X && most.beams[beamPointer].begin.Y == j.Y) || (most.beams[beamPointer].begin.X == j.X && most.beams[beamPointer].begin.Y == j.Y))
+            return true;
+    }
+    return false;
+}
 

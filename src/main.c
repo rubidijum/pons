@@ -41,14 +41,17 @@ int currentHeight = INIT_WINDOW_HEIGHT;
 
 float Xp, Yp, Xr, Yr;
 
-static unsigned build_bridge_mode = 1;
+unsigned build_bridge_mode = 1;
 
 Joint A, B;
 Beam AB;
 Bridge most;
 
-
 int main(int argc, char** argv){
+    
+    //inicijalizacija broja suseda
+    A.numOfNeighbours = 0;
+    B.numOfNeighbours = 0;
     
     //inicijalizacija gluta
     glutInit(&argc, argv);
@@ -67,7 +70,7 @@ int main(int argc, char** argv){
     glClearColor(0,0,0, 1);
     glClearDepth(10);
     
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     
     glutMainLoop();
     
@@ -106,10 +109,11 @@ static void on_display(void){
     else {//animation + draw bridge
         
         gluLookAt(0.5, 1.1, 3.7, 0, 0, 0, 0, 1, 0);
+        //gluLookAt(0.5, 1.1, 0, 0, 0, 0, 0, 1, 0);
         coordsys();
         draw_scene();
-        draw_car();
         draw_bridge();
+        draw_car();
     }
     glFlush();
     
@@ -134,6 +138,7 @@ static void on_keyboard(unsigned char key, int x, int y){
             if(!build_bridge_mode){
                 build_bridge_mode = 1;
                 printf("build_bridge_mode: %d\n", build_bridge_mode);
+                animation_ongoing = 0;
                 glutPostRedisplay();
             }
             break;
@@ -144,13 +149,13 @@ static void on_keyboard(unsigned char key, int x, int y){
             break;
         case 'g':
         case 'G':
-            //if(!build_bridge_mode){
+            if(!build_bridge_mode){
                 if(!animation_ongoing){
                     animation_ongoing = 1;
                     glutTimerFunc(10, on_timer, 0);
                     break;
                 }
-            //}
+            }
         case 's':
         case 'S':
             animation_ongoing = 0;
@@ -182,7 +187,10 @@ static void on_mouse(int button, int state, int x, int y){
       if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
         printf("\n=============\n\nPRESSED X:%d Y:%d\n", x, y);
           printf("Released X:%d Y:%d\n", x, y);
-        
+        //dodaj suseda zglobu A i B
+        //add_neighbour(&A, B);
+        //add_neighbour(&B, A);
+          
         Xr = x;
         Yr = y;
         B.X = Xr;
@@ -224,6 +232,8 @@ static void on_reshape(int width, int height){
 
 void draw_car(){
     
+    glColor3f(1,0,0);
+    
     GLUquadricObj* Cylinder;
     Cylinder = gluNewQuadric();
     gluQuadricDrawStyle(Cylinder, GLU_LINE);
@@ -231,7 +241,7 @@ void draw_car(){
    
     glPushMatrix();
    
-    glTranslatef(animation_parameter, 0, 0);
+    glTranslatef(animation_parameter/10, 0, 0);
    
     glRotatef(90, 0, 1, 0);
     glScalef(0.1,0.1,0.1);

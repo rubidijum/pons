@@ -5,6 +5,7 @@
 
 extern int currentWidth;
 extern int currentHeight;
+extern unsigned build_bridge_mode;
 
 void draw_grid(int HALF_GRID_SIZE){
    
@@ -57,19 +58,19 @@ void draw_point(float x, float y){
     float x_t, y_t;
     
     
-    if((x >= currentWidth/2 && x < currentWidth) && (y > 0 && y <= currentHeight/2)){ //prvi kvadrant
-            x_t = (x - currentWidth/2)/(float)(currentWidth/2);
-            y_t = (currentHeight/2 - y)/(float)(currentHeight/2);
-    }else if((x <= currentWidth/2 && x >= 0) && (y <= currentHeight/2 && y >= 0)){ //drugi kvadrant
-             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
-             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
-    }else if((x <= (currentWidth/2) && x >= 0) && (y <= currentHeight && y >= (currentHeight/2))){ //treci kvadrant
-             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
-             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
-    }else if((x <= currentWidth && x >= (currentWidth/2)) && (y <= currentHeight && y >= (currentHeight/2))){ 
-             x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
-             y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
-    }
+     if((x >= currentWidth/2 && x < currentWidth) && (y > 0 && y <= currentHeight/2)){ //prvi kvadrant
+             x_t = (x - currentWidth/2)/(float)(currentWidth/2);
+             y_t = (currentHeight/2 - y)/(float)(currentHeight/2);
+     }else if((x <= currentWidth/2 && x >= 0) && (y <= currentHeight/2 && y >= 0)){ //drugi kvadrant
+              x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+              y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+     }else if((x <= (currentWidth/2) && x >= 0) && (y <= currentHeight && y >= (currentHeight/2))){ //treci kvadrant
+              x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+              y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+     }else if((x <= currentWidth && x >= (currentWidth/2)) && (y <= currentHeight && y >= (currentHeight/2))){ 
+              x_t = (x - (currentWidth/2))/(float)(currentWidth/2);
+              y_t = ((currentHeight/2) - y)/(float)(currentHeight/2);
+     }
     
     //printf("Before rounding: \nX = %f\nY = %f\n", x_t, y_t);
     
@@ -83,21 +84,21 @@ void draw_point(float x, float y){
      y_t = roundf(y_t);
      y_t = y_t / snapY;
     
-    glBegin(GL_POINTS);
-    
-        //printf("Drawing %f %f\n", x_t, y_t);
-        glVertex3f(x_t, y_t, 0.0);
-    glEnd();
-    glutSwapBuffers();
+    if(build_bridge_mode){
+        glBegin(GL_POINTS);
+            glVertex3f(x_t, y_t, 0.0);
+        glEnd();
+        glutSwapBuffers();
+    }
 }
 
 void draw_scene(void){
     
-    //GLfloat old_line_width[1];
-    //glGetFloatv(GL_LINE_WIDTH, old_line_width);
+    GLfloat old_line_width[1];
+    glGetFloatv(GL_LINE_WIDTH, old_line_width);
     //printf("%f\n" , old_line_width[0]);
     
-    //glLineWidth(5.0);
+    glLineWidth(5.0);
         
     draw_point(170,460); // 0.3 -0.2
     draw_point(530,460);
@@ -107,7 +108,7 @@ void draw_scene(void){
         glColor3f(0,1,1);
         glScalef(0.5,0.8,0.5);
         glTranslatef(-1.54, -0.9, 0.3);
-        glutSolidCube(1);
+        glutWireCube(1);
     glPopMatrix();
     
     //nacrtaj desnu obalu
@@ -118,7 +119,7 @@ void draw_scene(void){
         glutWireCube(1);
     glPopMatrix();
     
-    //glLineWidth(old_line_width[0]);
+    glLineWidth(old_line_width[0]);
     
 }
 
@@ -126,7 +127,10 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
     
     float Xp_t, Yp_t, Xr_t, Yr_t;
     
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ); //vrati na prosli mode
+    GLint oldPolygonMode;
+    glGetIntegerv(GL_POLYGON_MODE, &oldPolygonMode);
+    
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     GLfloat old_line_width[1];
     glGetFloatv(GL_LINE_WIDTH, old_line_width);
     glLineWidth(2.0);
@@ -176,6 +180,9 @@ void draw_road(int Xp, int Yp, int Xr, int Yr){
         glVertex3f(Xp_t, Yp_t, -0.1);
     glEnd();
     
-    glutSwapBuffers();
+    if(build_bridge_mode)
+        glutSwapBuffers(); //FIXME: kako da ne treperi a da se iscrta u real time? => dozvoli samo u build_bridge modu
+    
+    glPolygonMode( GL_FRONT_AND_BACK, oldPolygonMode );
     glLineWidth(old_line_width[0]);
 }
