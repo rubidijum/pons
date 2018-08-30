@@ -84,6 +84,8 @@ void draw_point(float x, float y){
      y_t = roundf(y_t);
      y_t = y_t / snapY;
     
+    
+     
     if(build_bridge_mode){
         glBegin(GL_POINTS);
             glVertex3f(x_t, y_t, 0.0);

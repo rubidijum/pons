@@ -22,6 +22,9 @@ typedef struct _joint{
 
 typedef struct{
     //pocetna i krajnja tacka
+    //da li je put ili support toggle na neko dugme?
+    //duzina ?
+    char purpose;
     Joint begin;
     Joint end;
 }Beam;
@@ -34,6 +37,8 @@ void add_beam_to_bridge();
 void print_bridge();
 void undo_add_beam();
 bool joint_exists(Joint j);
+
+void add_neighbour(Joint* j, Joint n);
 
 void draw_bridge();
 void draw_beam(Beam* beam); 

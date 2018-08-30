@@ -51,10 +51,25 @@ void draw_bridge(){
 
 bool joint_exists(Joint j){
     int i;
-    for(i = 0; i < beamPointer; i++){
-        if((most.beams[beamPointer].begin.X == j.X && most.beams[beamPointer].begin.Y == j.Y) || (most.beams[beamPointer].begin.X == j.X && most.beams[beamPointer].begin.Y == j.Y))
+    /*
+     draw_point(170,460); // 0.3 -0.2
+    draw_point(530,460);*/
+    if((abs(j.X - 170) <= 10 && abs(j.Y - 460) <=10) || (abs(j.X - 530) <= 10 && abs(j.Y - 460) <=10))
+        return true;
+    for(i = 0; i <= beamPointer; i++){
+        //printf("********\n%d == %d || %d == %d\n**************", most.beams[i].begin.X, j.X, most.beams[i].end.X, j.X);
+        //printf("--------\n%d == %d || %d == %d\n--------------", most.beams[i].begin.Y, j.Y, most.beams[i].end.Y, j.Y);
+        if((abs(most.beams[i].begin.X - j.X) <= 10 && abs(most.beams[i].begin.Y - j.Y) <= 10) || (abs(most.beams[i].end.X - j.X) <= 10 && abs(most.beams[i].end.Y - j.Y) <= 10)){
+            //printf("jeaHHHSHADJSAHJDHSAKDJASKh\n\n");
             return true;
+        }
     }
     return false;
 }
 
+
+void add_neighbour(Joint* j, Joint n){
+    
+    j->neighbours[j->numOfNeighbours] = n;
+    
+}

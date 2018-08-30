@@ -1,6 +1,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include "help.h"
 #define MAIN_FILE
@@ -21,8 +22,17 @@ static void on_mouse(int button, int state, int x, int y);
 static void on_reshape(int width, int height);
 static void on_timer(int value);
 
+bool is_on_road();
+
 static int animation_ongoing;
 double animation_parameter = 0;
+
+char purpose;
+char purposes[2]  = {'r', 'b'};
+
+unsigned gameOver = 0;
+
+double rotateMe = 0;
 
 void draw_point(float x, float y);
 void draw_scene(void);
@@ -30,12 +40,11 @@ void draw_road(int Xp, int Yp, int Xr, int Yr);
 
 void draw_car();
 
-static float carX, carY;
+static float carX = 0, carY = 445; //HACK: vrati na 35
 
 GLdouble camX = 0;
 GLdouble camY = 0;
 GLdouble camZ = 0.5;
-
 int currentWidth = INIT_WINDOW_WIDTH;
 int currentHeight = INIT_WINDOW_HEIGHT;
 
@@ -52,6 +61,12 @@ int main(int argc, char** argv){
     //inicijalizacija broja suseda
     A.numOfNeighbours = 0;
     B.numOfNeighbours = 0;
+    
+    A.neighbours = malloc(sizeof(Joint)*5);
+    B.neighbours = malloc(sizeof(Joint)*5);
+    
+    
+    purpose = 'r';
     
     //inicijalizacija gluta
     glutInit(&argc, argv);
@@ -80,6 +95,10 @@ int main(int argc, char** argv){
 static void on_timer(int value){
     
     animation_parameter += 0.01;
+    
+    if(gameOver){
+        animation_ongoing = 0;
+    }
     
     if(animation_ongoing){
         glutTimerFunc(10, on_timer, 0);        
@@ -163,6 +182,18 @@ static void on_keyboard(unsigned char key, int x, int y){
         case 'r':
         case 'R':
             animation_parameter = 0;
+            carX = 0;
+            carY = 445;
+            break;
+        case 't':
+        case 'T':
+            purpose = purposes[0];
+            printf("%c\n", purpose);
+            break;
+        case 'y':
+        case 'Y':
+            purpose = purposes[1];
+            printf("%c\n", purpose);
             break;
        
            
@@ -176,35 +207,73 @@ static void on_mouse(int button, int state, int x, int y){
     
        
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+       
+        
         Xp = x;
         Yp = y;
+        
+        float snapX = 25*1.f;
+        Xp = Xp * snapX;
+        Xp = roundf(Xp);
+        Xp = Xp / snapX;
+         
+        float snapY = 25*1.f;
+        Yp = Yp * snapY;
+        Yp = roundf(Yp);
+        Yp = Yp / snapY;
+        
         A.X = Xp;
         A.Y = Yp;
-        AB.begin = A;
-        draw_point(Xp,Yp);
+        
         
     }
+    
+    if(joint_exists(A)){
+            printf("Postoji!\n");
+        AB.begin = A;
+        draw_point(Xp,Yp);
+    
       if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
         printf("\n=============\n\nPRESSED X:%d Y:%d\n", x, y);
           printf("Released X:%d Y:%d\n", x, y);
         //dodaj suseda zglobu A i B
-        //add_neighbour(&A, B);
-        //add_neighbour(&B, A);
+        add_neighbour(&A, B);
+        add_neighbour(&B, A);
           
         Xr = x;
         Yr = y;
+        
+        float snapX = 25*1.f;
+        Xr = Xr * snapX;
+        Xr = roundf(Xr);
+        Xr = Xr / snapX;
+         
+        float snapY = 25*1.f;
+        Yr = Yr * snapY;
+        Yr = roundf(Yr);
+        Yr = Yr / snapY;
+        
         B.X = Xr;
         B.Y = Yr;
         
         AB.end = B;
+        AB.purpose = purpose;
         printf("begin X:%d, begin Y:%d\nend X:%d, end Y:%d\n", AB.begin.X, AB.begin.Y, AB.end.X, AB.end.Y);
         //add_beam
+         int i,j;
+//          if(beamPointer >= 2){
+//          for(i = 0; i <= beamPointer; i++){
+//              for(j = 0; j < 5; j++)
+//                  printf("neighbour %d %d\n", most.beams[0].begin.neighbours[0].X, most.beams[0].begin.neighbours[0].Y);
+//          }
+//          }
         add_beam_to_bridge();
         draw_point(Xr,Yr);
         draw_road(Xp, Yp, Xr, Yr);
       }
     
     
+    }
     
 }
 
@@ -230,7 +299,32 @@ static void on_reshape(int width, int height){
        
 }
 
+bool is_on_road(){
+    
+  int i;
+  for(i = 0; i <= beamPointer ; i++){
+  printf("CarX : %f, carY: %f, beam start %d beam end %d animation_parameter %f\n", carX, carY, most.beams[i].begin.X , most.beams[i].end.X,animation_parameter);
+      if(most.beams[i].purpose == 'r'){
+          if(carX + 5 >= most.beams[i].begin.X && carX <= most.beams[i].end.X){
+              printf("On road\n");
+            return true;
+          }else if(carX <= most.beams[i].begin.X && carX >= most.beams[i].end.X){
+              printf("On road from right\n");
+        }
+          }
+      }
+      return false;
+    
+}
+
 void draw_car(){
+    
+    //is_on_road();
+    
+    if(round(carX) == 650)
+        gameOver = 1;
+    if(round(carX) == 380 && carY >= 450)
+        gameOver = 1; //fail
     
     glColor3f(1,0,0);
     
@@ -241,19 +335,31 @@ void draw_car(){
    
     glPushMatrix();
    
+    //carX += animation_parameter/11;
+    carX = 35 + 37*animation_parameter;
     glTranslatef(animation_parameter/10, 0, 0);
+    if(!(is_on_road()) && carX >= 200 && carX <= 530){
+        carY = 445 + animation_parameter; //FIXME: adjust
+        printf("%f\n", animation_parameter);
+        glTranslatef(0, -(animation_parameter-4.49)/3, 0);
+        glRotatef(-(animation_parameter-4.46)*15, 0, 0, 1);
+    }
    
+    //FIXME: popravi redosled mozda
     glRotatef(90, 0, 1, 0);
     glScalef(0.1,0.1,0.1);
     glTranslatef(-1.8,-2.8,-9);
    
-    glPushMatrix();
-        glScalef (1.0, 0.3, 1.8);
-        glutSolidCube (1.0);
-        glScalef(1,1,0.5);
-        glTranslatef(0,0.9,0);
-        glutSolidCube(1.0);
-    glPopMatrix();
+    //sin(animation_parameter*50)/1000
+    
+     glPushMatrix();
+         glTranslatef(0, sin(animation_parameter*50)/50, 0);
+         glScalef (1.0, 0.3, 1.8);
+         glutSolidCube (1.0);
+         glScalef(1,1,0.5);
+         glTranslatef(0,0.9,0);
+         glutSolidCube(1.0);
+     glPopMatrix();
    
     glPushMatrix();
         glTranslatef(0.5,-0.1,-0.6);
