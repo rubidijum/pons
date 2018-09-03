@@ -25,3 +25,5 @@ Simple bridge building simulation program developed for computer graphics course
 |`y` `Y`|Toggle beam purpose to 'beam'|
 
 ![gif](https://github.com/MATF-RG17/RG063-pons/blob/master/Gifs/first.gif)
+
+![gif](https://github.com/MATF-RG17/RG063-pons/blob/master/Gifs/second.gif)
