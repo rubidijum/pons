@@ -27,19 +27,24 @@ bool is_on_road();
 static int animation_ongoing;
 double animation_parameter = 0;
 
+// Indicates if load is calculated for the bridge
+unsigned bridge_loaded = 0;
+
 char purpose;
 char purposes[2]  = {'r', 'b'};
 
 unsigned gameOver = 0;
 
-double rotateMe = 0;
+// Indicates if car is falling
+unsigned freeFall = 0;
+double freeFall_parameter = 0;
 
-void draw_point(float x, float y);
-void draw_scene(void);
-void draw_road(int Xp, int Yp, int Xr, int Yr);
+// Remembers index of a road beam where car is positioned
+int roadIndex;
 
 void draw_car();
 
+// Car coordinates
 static float carX = 0, carY = 445; //HACK: vrati na 35
 
 GLdouble camX = 0;
@@ -58,14 +63,6 @@ Bridge most;
 
 int main(int argc, char** argv){
     
-    //inicijalizacija broja suseda
-    A.numOfNeighbours = 0;
-    B.numOfNeighbours = 0;
-    
-    A.neighbours = malloc(sizeof(Joint)*5);
-    B.neighbours = malloc(sizeof(Joint)*5);
-    
-    
     purpose = 'r';
     
     //inicijalizacija gluta
@@ -82,7 +79,7 @@ int main(int argc, char** argv){
     glutReshapeFunc(on_reshape);
     
     
-    glClearColor(0,0,0, 1);
+    glClearColor(0,0,0,1);
     glClearDepth(10);
     
     glEnable(GL_DEPTH_TEST);
@@ -109,32 +106,28 @@ static void on_timer(int value){
 }
 
 static void on_display(void){
-    //printf("%f %f %f\n", camX, camY, camZ);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    if(build_bridge_mode){ //build bridge
+    if(build_bridge_mode){ //mode for constructing bridge
         
         gluLookAt(0, 0, 1.8, 0, 0, 0, 0, 1, 0);
-        draw_grid(HALF_GRID_SIZE); //25 => 50 celija * 50 celija
+        draw_grid(HALF_GRID_SIZE); //25 => 50 cells * 50 cells
         draw_scene();
         draw_bridge(); 
         draw_car();
         coordsys();
         
     }
-    else {//animation + draw bridge
+    else { //mode for testing bridge
         
         gluLookAt(0.5, 1.1, 3.7, 0, 0, 0, 0, 1, 0);
-        //gluLookAt(0.5, 1.1, 0, 0, 0, 0, 0, 1, 0);
-        coordsys();
         draw_scene();
         draw_bridge();
         draw_car();
     }
-    glFlush();
     
     glutSwapBuffers();
 }
@@ -155,6 +148,8 @@ static void on_keyboard(unsigned char key, int x, int y){
         case 'b':
         case 'B':
             if(!build_bridge_mode){
+                bridge_loaded = 0;
+                reset_bridge_load();
                 build_bridge_mode = 1;
                 printf("build_bridge_mode: %d\n", build_bridge_mode);
                 animation_ongoing = 0;
@@ -164,11 +159,17 @@ static void on_keyboard(unsigned char key, int x, int y){
         case 'u':
         case 'U':
             undo_add_beam();
+            bridge_loaded = 0;
+            reset_bridge_load();
             glutPostRedisplay();
             break;
         case 'g':
         case 'G':
             if(!build_bridge_mode){
+                if(!bridge_loaded){
+                    printf("loading bridge...\n");
+                    load_bridge();
+                }
                 if(!animation_ongoing){
                     animation_ongoing = 1;
                     glutTimerFunc(10, on_timer, 0);
@@ -184,6 +185,9 @@ static void on_keyboard(unsigned char key, int x, int y){
             animation_parameter = 0;
             carX = 0;
             carY = 445;
+            freeFall = 0;
+            freeFall_parameter = 0;
+            gameOver = 0;
             break;
         case 't':
         case 'T':
@@ -195,6 +199,9 @@ static void on_keyboard(unsigned char key, int x, int y){
             purpose = purposes[1];
             printf("%c\n", purpose);
             break;
+//         case 'l':
+//             load_bridge();
+//             break;
        
            
             
@@ -204,10 +211,12 @@ static void on_keyboard(unsigned char key, int x, int y){
 
 
 static void on_mouse(int button, int state, int x, int y){
-    
-       
+    /*
+     * Left click pressed creates joint A
+     * Left click released creates joint B
+     * Beam AB is added to the bridge
+    */
     if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
-       
         
         Xp = x;
         Yp = y;
@@ -222,23 +231,23 @@ static void on_mouse(int button, int state, int x, int y){
         Yp = roundf(Yp);
         Yp = Yp / snapY;
         
+        
         A.X = Xp;
         A.Y = Yp;
-        
+        A.broken = 0;
         
     }
     
-    if(joint_exists(A)){
-            printf("Postoji!\n");
+    // Only allow existing nodes to be clicked
+    if(joint_exists(&A)){
+            
+            
         AB.begin = A;
         draw_point(Xp,Yp);
     
       if(button == GLUT_LEFT_BUTTON && state == GLUT_UP){
-        printf("\n=============\n\nPRESSED X:%d Y:%d\n", x, y);
-          printf("Released X:%d Y:%d\n", x, y);
-        //dodaj suseda zglobu A i B
-        add_neighbour(&A, B);
-        add_neighbour(&B, A);
+//         printf("\n=============\n\nPRESSED X:%d Y:%d\n", x, y);
+//           printf("Released X:%d Y:%d\n", x, y);
           
         Xr = x;
         Yr = y;
@@ -255,23 +264,29 @@ static void on_mouse(int button, int state, int x, int y){
         
         B.X = Xr;
         B.Y = Yr;
+        B.broken = 0;
+        
+        joint_exists(&B); //HACK: updates joint B to have same coordinates like an existing joint
         
         AB.end = B;
         AB.purpose = purpose;
         printf("begin X:%d, begin Y:%d\nend X:%d, end Y:%d\n", AB.begin.X, AB.begin.Y, AB.end.X, AB.end.Y);
-        //add_beam
-         int i,j;
-//          if(beamPointer >= 2){
-//          for(i = 0; i <= beamPointer; i++){
-//              for(j = 0; j < 5; j++)
-//                  printf("neighbour %d %d\n", most.beams[0].begin.neighbours[0].X, most.beams[0].begin.neighbours[0].Y);
-//          }
-//          }
+
+         
+        // Add current beam to the bridge
         add_beam_to_bridge();
         draw_point(Xr,Yr);
+        switch(purpose){
+        case 'r':
+            glColor3f(vaporBlue);
+            break;
+        case 'b':
+            glColor3f(vaporPink);
+            break;
+        }
         draw_road(Xp, Yp, Xr, Yr);
+        
       }
-    
     
     }
     
@@ -299,35 +314,65 @@ static void on_reshape(int width, int height){
        
 }
 
+/*
+ * For each road beam in the bridge, check if the car is currently between begin and end point of the beam
+ *          carX
+ *           | 
+ * o_________v_____________o <- Y = 445
+ * 
+ * If car started falling, it's Y coordinate will be greater than 445
+*/
 bool is_on_road(){
     
   int i;
   for(i = 0; i <= beamPointer ; i++){
-  printf("CarX : %f, carY: %f, beam start %d beam end %d animation_parameter %f\n", carX, carY, most.beams[i].begin.X , most.beams[i].end.X,animation_parameter);
-      if(most.beams[i].purpose == 'r'){
-          if(carX + 5 >= most.beams[i].begin.X && carX <= most.beams[i].end.X){
-              printf("On road\n");
+  //printf("CarX : %f, carY: %f, beam start %d beam end %d animation_parameter %f\n", carX, carY, most.beams[i].begin.X , most.beams[i].end.X,animation_parameter);
+      if(most.beams[i].purpose == 'r'){ 
+          if(carX + 5 >= most.beams[i].begin.X && carX <= most.beams[i].end.X && carY <= 445){ 
+            roadIndex = i;
             return true;
-          }else if(carX <= most.beams[i].begin.X && carX >= most.beams[i].end.X){
-              printf("On road from right\n");
+          }else if(carX <= most.beams[i].begin.X && carX >= most.beams[i].end.X  && carY <= 445){
+              roadIndex = i;
+              return true;
         }
           }
       }
-      return false;
+    return false;
     
 }
 
 void draw_car(){
     
-    //is_on_road();
     
-    if(round(carX) == 650)
+    
+    
+    // When car 'steps' on a beam, rotate that beam if it's broken
+    if(is_on_road()){ //TODO: FIXME: 
+        rotate_road(&most.beams[roadIndex]);
+        int i;
+        for(i = 0; i < beamPointer; i++){
+            if(beamPointer != roadIndex);
+            rotate_road(&most.beams[i]);
+            reset_bridge_load();
+            load_bridge();
+        }
+    }
+    
+    
+    if(round(carX) == 650)// Car has reached the other side 
         gameOver = 1;
-    if(round(carX) == 380 && carY >= 450)
-        gameOver = 1; //fail
+    if(round(carX) >= 170 && carY >= 455) // Car fell off the bridge
+        gameOver = 1; 
     
-    glColor3f(1,0,0);
+    glColor3f(vaporPurple);
     
+    // Save old line width
+    GLfloat old_line_width[1];
+    glGetFloatv(GL_LINE_WIDTH, old_line_width);
+    
+    glLineWidth(2.0);
+    
+    // Initialize GLUquadricObj for wheels
     GLUquadricObj* Cylinder;
     Cylinder = gluNewQuadric();
     gluQuadricDrawStyle(Cylinder, GLU_LINE);
@@ -335,57 +380,71 @@ void draw_car(){
    
     glPushMatrix();
    
-    //carX += animation_parameter/11;
-    carX = 35 + 37*animation_parameter;
-    glTranslatef(animation_parameter/10, 0, 0);
-    if(!(is_on_road()) && carX >= 200 && carX <= 530){
-        carY = 445 + animation_parameter; //FIXME: adjust
-        printf("%f\n", animation_parameter);
-        glTranslatef(0, -(animation_parameter-4.49)/3, 0);
-        glRotatef(-(animation_parameter-4.46)*15, 0, 0, 1);
+    
+    /*
+     * Animate car motion and update its coordinates
+     * TODO: remove magic numbers
+    */
+    carX = 35 + 37*animation_parameter; 
+    glTranslatef(animation_parameter/10, 0, 0); // Forward motion
+    
+    // If car fell of the bridge, translate it downwards
+    if(!(is_on_road()) && carX >= 170 && carX <= 530){ 
+        carY = 445 + animation_parameter; //TODO: improve accuracy
+        freeFall_parameter += 0.01; 
+        glTranslatef(0, -freeFall_parameter/5, 0); 
+        glRotatef(-freeFall_parameter*10, 0, 0, 1); 
     }
    
-    //FIXME: popravi redosled mozda
+    
     glRotatef(90, 0, 1, 0);
     glScalef(0.1,0.1,0.1);
     glTranslatef(-1.8,-2.8,-9);
    
-    //sin(animation_parameter*50)/1000
     
-     glPushMatrix();
-         glTranslatef(0, sin(animation_parameter*50)/50, 0);
+    // Draw car body and simulate car running
+    glPushMatrix();
+         glTranslatef(0, sin(animation_parameter*40)/50, 0);
          glScalef (1.0, 0.3, 1.8);
-         glutSolidCube (1.0);
+         glutWireCube (1.0);
          glScalef(1,1,0.5);
          glTranslatef(0,0.9,0);
-         glutSolidCube(1.0);
-     glPopMatrix();
+         glutWireCube(1.0);
+    glPopMatrix();
    
+    // Draw wheels //////////////////////////////////
+    // Back left
     glPushMatrix();
         glTranslatef(0.5,-0.1,-0.6);
         glRotatef(90,0,1,0);
         gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
     glPopMatrix();
-   
+ 
+    // Front left
     glPushMatrix();
-        glTranslatef(0.5,-0.1,0.6);
-        glRotatef(90,0,1,0);
-        gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
-    glPopMatrix();
+         glTranslatef(0.5,-0.1,0.6);
+         glRotatef(90,0,1,0);
+         gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
+     glPopMatrix();
    
    
+    // Back right
     glPushMatrix();
         glTranslatef(-0.6,-0.1,-0.6);
         glRotatef(90,0,1,0);
         gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
     glPopMatrix();
-   
-   
+
+   // Front right
    glPushMatrix();
         glTranslatef(-0.6,-0.1,0.6);
         glRotatef(90,0,1,0);
         gluCylinder(Cylinder, 0.2,0.2, 0.1, 10, 10);
    glPopMatrix();
+   ///////////////////////////////////////////////// 
    
    glPopMatrix();
+   
+   // Revert to old line width
+    glLineWidth(old_line_width[0]);
 }
