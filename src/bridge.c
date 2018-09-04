@@ -144,7 +144,9 @@ void load_joint(Joint *j){ //TODO: Needs a lot more work => unrealistic physics
         
     }
     // Break 'hanging' joints FIXME
-    if(numOfNeighbours == 1 && !((j->X == 170 && j->Y == 460) || (j->X == 530 && j->Y == 460)))
+    if((j->X == 170 && j->Y == 460) || (j->X == 530 && j->Y == 460))
+        j->broken = 0;
+    else if(numOfNeighbours == 1)
         j->broken = 1;
     else if(j->loadM >= MAX_LOAD)
         j->broken = 1;
