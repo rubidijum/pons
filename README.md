@@ -11,7 +11,7 @@ Simple bridge building simulation program developed for computer graphics course
   $ ./pons
   ```
 
-Use a mouse to draw a bridge beam by beam(left click and drag to desired position for each beam). You can only click on existing joints when drawing. You can choose which type of beam is active by pressing 't'('T') for road or 'y'('Y') for supporting beam. Car can only cross the bridge via road, support beams are just for support of the bridge. When you are ready to test your creation, press 'v'('V') to change view and then start the animation on 'g'('G'). You can pause the animation pressing 's'('S') and also restart the animation pressing 'r'('R'). If you want to undo your last added beam, pres 'u'('U'). 
+Use a mouse to draw a bridge beam by beam(left click and drag to desired position for each beam). You can only click on existing joints when drawing. You can choose which type of beam is active by pressing 't'('T') for road or 'y'('Y') for supporting beam. Car can only cross the bridge via road, support beams are just for the support of the bridge. When you are ready to test your creation, press 'v'('V') to change view and then start the animation on 'g'('G'). You can pause the animation by pressing 's'('S') and also restart the animation by pressing 'r'('R'). If you want to undo your last added beam, pres 'u'('U'). 
 
  
 ## Controls:
