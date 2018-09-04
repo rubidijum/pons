@@ -16,6 +16,7 @@
 
 #define HALF_GRID_SIZE 25
 
+//TODO: move to callbacks.h
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_mouse(int button, int state, int x, int y);
@@ -24,15 +25,17 @@ static void on_timer(int value);
 
 bool is_on_road();
 
-static int animation_ongoing;
+/*static*/ int animation_ongoing;
 double animation_parameter = 0;
 
 // Indicates if load is calculated for the bridge
 unsigned bridge_loaded = 0;
 
+// Specifies beam's purpose
 char purpose;
 char purposes[2]  = {'r', 'b'};
 
+// Indicates wheter game is over or not
 unsigned gameOver = 0;
 
 // Indicates if car is falling
@@ -42,6 +45,7 @@ double freeFall_parameter = 0;
 // Remembers index of a road beam where car is positioned
 int roadIndex;
 
+//TODO: move to other file
 void draw_car();
 
 // Car coordinates
@@ -67,7 +71,7 @@ int main(int argc, char** argv){
     
     //inicijalizacija gluta
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     
     glutInitWindowSize(INIT_WINDOW_WIDTH, INIT_WINDOW_HEIGHT);
     glutInitWindowPosition(0,0);
@@ -342,9 +346,6 @@ bool is_on_road(){
 }
 
 void draw_car(){
-    
-    
-    
     
     // When car 'steps' on a beam, rotate that beam if it's broken
     if(is_on_road()){ //TODO: FIXME: 

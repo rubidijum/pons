@@ -6,7 +6,6 @@
 #include "help.h"
 #include "colors.h"
 
-// int beamPointer;
 extern Joint A, B;
 extern Beam AB;
 extern Bridge most;
@@ -31,8 +30,7 @@ void add_beam_to_bridge(){
 }
 
 void undo_add_beam(){
-    //unisti susede 
-    //remove_neighbours(most[beamPointer]);
+    
     if(beamPointer >= 0){
         beamPointer--;
         print_bridge();
@@ -92,17 +90,23 @@ void rotate_road(Beam* beam){
     
 }
 
+/*
+ * Checks wheter joint j exists in the bridge
+*/
 bool joint_exists(Joint* j){
     int i;
-    /*
-     draw_point(170,460); // 0.3 -0.2
-    draw_point(530,460);*/
+    //TODO: remove magic numbers
+    //170 - left coast X
+    //460 - left coast Y
     if(abs(j->X - 170) <= 10 && abs(j->Y - 460) <=10){
         printf("Updating Joint j->X : %d j->Y : %d to 170, 460\n", j->X, j->Y);
         j->X = 170;
         j->Y = 460;
         return true;
-    }else if(abs(j->X - 530) <= 10 && abs(j->Y - 460) <=10){
+    }
+    //170 - right coast X
+    //460 - right coast Y
+    else if(abs(j->X - 530) <= 10 && abs(j->Y - 460) <=10){
         j->X = 530;
         j->Y = 460;
         return true;
@@ -121,7 +125,7 @@ bool joint_exists(Joint* j){
     return false;
 }
 
-void load_joint(Joint *j){ //TODO: Needs a lot more work
+void load_joint(Joint *j){ //TODO: Needs a lot more work => unrealistic physics
     
     int i;
     int numOfNeighbours = 0;
@@ -139,10 +143,10 @@ void load_joint(Joint *j){ //TODO: Needs a lot more work
         
         
     }
-    if(j->loadM >= MAX_LOAD)
+    // Break 'hanging' joints FIXME
+    if(numOfNeighbours == 1 && !((j->X == 170 && j->Y == 460) || (j->X == 530 && j->Y == 460)))
         j->broken = 1;
-    // Break 'hanging' joints
-    else if(numOfNeighbours == 1 && !((j->X == 170 && j->Y == 460) || (j->X == 530 && j->Y == 460)))
+    else if(j->loadM >= MAX_LOAD)
         j->broken = 1;
     
     else j->broken = 0;
