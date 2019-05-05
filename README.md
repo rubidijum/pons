@@ -27,6 +27,6 @@ Use a mouse to draw a bridge beam by beam(left click and drag to desired positio
 |`t` `T`|Toggle beam purpose to 'road'|
 |`y` `Y`|Toggle beam purpose to 'beam'|
 
-![gif](https://github.com/rubidijum/RG063-pons/blob/master/Gifs/first.gif)
+![gif](https://github.com/rubidijum/pons/blob/master/Gifs/first.gif)
 
-![gif](https://github.com/rubidijum/RG063-pons/blob/master/Gifs/second.gif)
+![gif](https://github.com/rubidijum/pons/blob/master/Gifs/second.gif)
